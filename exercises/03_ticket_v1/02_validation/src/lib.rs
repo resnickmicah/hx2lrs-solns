@@ -29,7 +29,7 @@ impl Ticket {
         };
         let status = match status.as_str() {
             "To-Do" | "In Progress" | "Done" => status,
-            _ => panic!("Only `To-Do`, `In Progress`, and `Done` statuses are allowed")
+            _ => panic!("Only `To-Do`, `In Progress`, and `Done` statuses are allowed"),
         };
         Self {
             title,

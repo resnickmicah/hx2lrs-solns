@@ -20,7 +20,7 @@ pub struct Order {
 
 impl Order {
     fn validate_product_name(product_name: &String) {
-        if product_name.len() == 0 || product_name.len() > 300  {
+        if product_name.len() == 0 || product_name.len() > 300 {
             panic!("Invalid product name, must be between 1-300 chars");
         }
     }
@@ -44,7 +44,7 @@ impl Order {
         Self {
             product_name,
             quantity,
-            unit_price
+            unit_price,
         }
     }
 
@@ -78,4 +78,4 @@ impl Order {
         Self::validate_unit_price(&unit_price);
         self.unit_price = unit_price;
     }
- }
+}

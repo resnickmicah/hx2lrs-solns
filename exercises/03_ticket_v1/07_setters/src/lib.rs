@@ -9,7 +9,6 @@ pub struct Ticket {
 }
 
 impl Ticket {
-
     fn validate_title(title: &str) {
         if title.is_empty() {
             panic!("Title cannot be empty");
