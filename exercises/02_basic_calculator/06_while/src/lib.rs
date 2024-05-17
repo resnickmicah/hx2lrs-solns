@@ -6,7 +6,7 @@ pub fn factorial(n: u32) -> u32 {
     // It panics at runtime.
     let mut n = n;
     let mut product = 1;
-    while(n > 0) {
+    while n > 0 {
         product *= n;
         n -= 1;
     }
