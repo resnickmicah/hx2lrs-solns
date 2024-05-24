@@ -8,6 +8,30 @@ enum Status {
     Done,
 }
 
+impl TryFrom<String> for Status {
+    type Error = std::fmt::Error;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        match value {
+            value if value.to_lowercase() == "todo" => Ok(Self::ToDo),
+            value if value.to_lowercase() == "inprogress" => Ok(Self::InProgress),
+            value if value.to_lowercase() == "done" => Ok(Self::Done),
+            _ => Err(std::fmt::Error),
+        }
+    }
+}
+
+impl TryFrom<&str> for Status {
+    type Error = std::fmt::Error;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        match value {
+            value if value.to_lowercase() == "todo" => Ok(Self::ToDo),
+            value if value.to_lowercase() == "inprogress" => Ok(Self::InProgress),
+            value if value.to_lowercase() == "done" => Ok(Self::Done),
+            _ => Err(std::fmt::Error),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
