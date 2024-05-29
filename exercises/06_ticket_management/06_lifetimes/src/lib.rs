@@ -36,6 +36,15 @@ impl TicketStore {
     }
 }
 
+impl<'store_lifetime> IntoIterator for &'store_lifetime TicketStore {
+    type Item = &'store_lifetime Ticket;
+    type IntoIter = std::slice::Iter<'store_lifetime, Ticket>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tickets.iter()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
