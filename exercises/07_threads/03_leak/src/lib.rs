@@ -3,10 +3,22 @@
 //  sum each half in a separate thread.
 //  Hint: check out `Vec::leak`.
 
-use std::thread;
+use std::thread::spawn;
 
 pub fn sum(v: Vec<i32>) -> i32 {
-    todo!()
+    let static_vec: &'static mut [i32] = Vec::leak(v);
+
+    let midpoint = static_vec.len() / 2;
+    let bottom_half = static_vec[0..midpoint].to_vec();
+    let top_half = static_vec[midpoint..].to_vec();
+
+    let bottom_worker = spawn(move || bottom_half.iter().sum());
+    let top_worker = spawn(move || top_half.iter().sum());
+
+    let bottom_result: i32 = bottom_worker.join().unwrap();
+    let top_result: i32 = top_worker.join().unwrap();
+
+    bottom_result + top_result
 }
 
 #[cfg(test)]
