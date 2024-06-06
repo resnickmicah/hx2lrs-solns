@@ -1,10 +1,25 @@
+use std::borrow::BorrowMut;
+use tokio::io::copy;
 use tokio::net::TcpListener;
 
 // TODO: write an echo server that accepts TCP connections on two listeners, concurrently.
 //  Multiple connections (on the same listeners) should be processed concurrently.
 //  The received data should be echoed back to the client.
+
+pub async fn echo(listener: TcpListener) -> Result<(), anyhow::Error> {
+    loop {
+        let (mut stream, _) = listener.accept().await?;
+        let (mut reader, mut writer) = stream.split();
+        let _: u64 = copy(reader.borrow_mut(), writer.borrow_mut()).await?;
+    }
+}
+
 pub async fn echoes(first: TcpListener, second: TcpListener) -> Result<(), anyhow::Error> {
-    todo!()
+    let first_handle = tokio::spawn(echo(first));
+    let second_handle = tokio::spawn(echo(second));
+    let _ = first_handle.await?;
+    let _ = second_handle.await?;
+    Ok(())
 }
 
 #[cfg(test)]
