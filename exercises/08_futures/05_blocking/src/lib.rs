@@ -3,16 +3,28 @@
 //  deadlock between the caller and the server.
 //  Use `spawn_blocking` inside `echo` to resolve the issue.
 use std::io::{Read, Write};
-use tokio::net::TcpListener;
+use tokio::net::{TcpListener, TcpStream};
+use tokio::task;
+
+pub fn blocking_echo(socket: TcpStream) -> Result<(), anyhow::Error> {
+    let mut socket = socket.into_std()?;
+    socket.set_nonblocking(false)?;
+    let mut buffer = Vec::new();
+    let _ = socket.read_to_end(&mut buffer)?;
+    socket.write_all(&buffer)?;
+    Ok(())
+}
 
 pub async fn echo(listener: TcpListener) -> Result<(), anyhow::Error> {
+    println!("Entering echo loop");
     loop {
         let (socket, _) = listener.accept().await?;
-        let mut socket = socket.into_std()?;
-        socket.set_nonblocking(false)?;
-        let mut buffer = Vec::new();
-        socket.read_to_end(&mut buffer)?;
-        socket.write_all(&buffer)?;
+        let handle = task::spawn_blocking(|| blocking_echo(socket));
+        match handle.await {
+            Ok(Ok(())) => {}
+            Err(e) => return Err(e.into()),
+            Ok(Err(e)) => return Err(e.into()),
+        }
     }
 }
 
