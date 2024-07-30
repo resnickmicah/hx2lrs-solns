@@ -3,8 +3,9 @@
 //   Implement the traits required to make the tests pass too.
 
 use crate::Ticket;
+use serde::Deserialize;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, Deserialize)]
 pub struct TicketDescription(String);
 
 #[derive(Debug, thiserror::Error)]

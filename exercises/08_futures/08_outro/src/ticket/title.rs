@@ -2,7 +2,9 @@
 //   enforcing that the title is not empty and is not longer than 50 characters.
 //   Implement the traits required to make the tests pass too.
 
-#[derive(Clone, PartialEq, Debug)]
+use serde::Deserialize;
+
+#[derive(Clone, PartialEq, Debug, Deserialize)]
 pub struct TicketTitle(String);
 
 #[derive(Debug, thiserror::Error)]
