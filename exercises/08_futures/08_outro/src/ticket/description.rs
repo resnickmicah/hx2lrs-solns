@@ -1,11 +1,9 @@
 // TODO: Implement `TryFrom<String>` and `TryFrom<&str>` for the `TicketDescription` type,
 //   enforcing that the description is not empty and is not longer than 500 characters.
 //   Implement the traits required to make the tests pass too.
+use serde::{Deserialize, Serialize};
 
-use crate::Ticket;
-use serde::Deserialize;
-
-#[derive(Clone, PartialEq, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, sqlx::Type)]
 pub struct TicketDescription(String);
 
 #[derive(Debug, thiserror::Error)]

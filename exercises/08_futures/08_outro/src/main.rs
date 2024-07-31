@@ -9,7 +9,7 @@ use rocket::State;
 use serde::{Deserialize, Serialize};
 use shuttle_runtime::CustomError;
 use sqlx::{Executor, FromRow, PgPool};
-use ticket::Ticket;
+// use ticket::{create, read};
 
 struct MyState {
     pool: PgPool,

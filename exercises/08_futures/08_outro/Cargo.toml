@@ -9,6 +9,6 @@ serde = "1.0.148"
 shuttle-rocket = "0.46.0"
 shuttle-runtime = "0.46.0"
 shuttle-shared-db = { version = "0.46.0", features = ["postgres", "sqlx"] }
-sqlx = "0.7.1"
+sqlx = { version= "0.7.1", features = ["postgres"] }
 thiserror = "1"
 tokio = "1.26.0"
