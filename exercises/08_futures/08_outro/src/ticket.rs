@@ -26,7 +26,7 @@ pub struct Ticket {
 }
 
 pub struct TicketState {
-    pool: PgPool,
+    pub pool: PgPool,
 }
 
 #[post("/", data = "<data>")]

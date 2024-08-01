@@ -9,11 +9,7 @@ use rocket::State;
 use serde::{Deserialize, Serialize};
 use shuttle_runtime::CustomError;
 use sqlx::{Executor, FromRow, PgPool};
-use ticket::{create, read};
-
-struct MyState {
-    pool: PgPool,
-}
+use ticket::{create, read, Ticket, TicketState};
 
 #[shuttle_runtime::main]
 async fn main(
@@ -26,7 +22,7 @@ async fn main(
         .await
         .map_err(CustomError::new)?;
 
-    let state = MyState { pool };
+    let state = TicketState { pool };
     let rocket = rocket::build()
         .mount("/ticket", routes![create, read])
         .manage(state);
