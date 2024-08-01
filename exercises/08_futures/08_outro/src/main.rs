@@ -3,13 +3,9 @@ extern crate rocket;
 
 mod ticket;
 
-use rocket::response::status::BadRequest;
-use rocket::serde::json::Json;
-use rocket::State;
-use serde::{Deserialize, Serialize};
 use shuttle_runtime::CustomError;
-use sqlx::{Executor, FromRow, PgPool};
-use ticket::{create, read, Ticket, TicketState};
+use sqlx::{Executor, PgPool};
+use ticket::{create, read, TicketState};
 
 #[shuttle_runtime::main]
 async fn main(

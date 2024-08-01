@@ -1,5 +1,9 @@
-use rocket::response::status::BadRequest;
+use rocket::http::Status;
+use rocket::response;
+use rocket::response::status::{BadRequest, NotFound};
+use rocket::response::Responder;
 use rocket::serde::json::Json;
+use rocket::Request;
 use rocket::State;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool};
@@ -9,7 +13,7 @@ mod status;
 mod title;
 
 pub use description::TicketDescription;
-pub use status::Status;
+pub use status::Status as TicketStatus;
 pub use title::TicketTitle;
 
 #[derive(Deserialize)]
@@ -22,11 +26,32 @@ pub struct TicketDraft {
 pub struct Ticket {
     pub title: TicketTitle,
     pub description: TicketDescription,
-    pub status: Status,
+    pub status: TicketStatus,
 }
 
 pub struct TicketState {
     pub pool: PgPool,
+}
+
+#[derive(Debug)]
+enum TicketHandlerError {
+    NotFound(i32),
+    BadRequest(String),
+}
+
+impl<'r> Responder<'r, 'static> for TicketHandlerError {
+    fn respond_to(self, r: &'r Request<'_>) -> rocket::response::Result<'static> {
+        match self {
+            TicketHandlerError::NotFound(id) => response::status::Custom(
+                Status::NotFound,
+                format!("Ticket with ID {} not found", id),
+            )
+            .respond_to(r),
+            TicketHandlerError::BadRequest(e) => {
+                response::status::Custom(Status::BadRequest, e).respond_to(r)
+            }
+        }
+    }
 }
 
 #[post("/", data = "<data>")]
@@ -34,7 +59,7 @@ pub async fn create(
     data: Json<TicketDraft>,
     state: &State<TicketState>,
 ) -> Result<Json<Ticket>, BadRequest<String>> {
-    let status = Status::ToDo;
+    let status = TicketStatus::ToDo;
     let description = TicketDescription::try_from(data.description.clone())
         .map_err(|e| BadRequest(e.to_string()))?;
     let title = TicketTitle::try_from(data.title.clone()).map_err(|e| BadRequest(e.to_string()))?;
@@ -56,24 +81,30 @@ pub async fn create(
     let ticket = Ticket {
         title: TicketTitle::try_from(ticket_row.title).unwrap(),
         description: TicketDescription::try_from(ticket_row.description).unwrap(),
-        status: Status::try_from(ticket_row.status).unwrap(),
+        status: TicketStatus::try_from(ticket_row.status).unwrap(),
     };
     Ok(Json(ticket))
 }
 
 #[get("/<id>")]
-pub async fn read(id: i32, state: &State<TicketState>) -> Result<Json<Ticket>, BadRequest<String>> {
-    let ticket_row = sqlx::query!(
+pub async fn read(id: i32, state: &State<TicketState>) -> Result<Json<Ticket>, TicketHandlerError> {
+    let get_ticket_query_result = sqlx::query!(
         "SELECT description, title, status FROM tickets WHERE id = $1",
         id
     )
     .fetch_one(&state.pool)
-    .await
-    .map_err(|e| BadRequest(e.to_string()))?;
+    .await;
+
+    let ticket_row = match get_ticket_query_result {
+        Ok(ticket_row) => ticket_row,
+        Err(sqlx::Error::RowNotFound) => return Err(TicketHandlerError::NotFound(id)),
+        Err(e) => return Err(TicketHandlerError::BadRequest(e.to_string())),
+    };
+
     let ticket = Ticket {
         title: TicketTitle::try_from(ticket_row.title).unwrap(),
         description: TicketDescription::try_from(ticket_row.description).unwrap(),
-        status: Status::try_from(ticket_row.status).unwrap(),
+        status: TicketStatus::try_from(ticket_row.status).unwrap(),
     };
 
     Ok(Json(ticket))
