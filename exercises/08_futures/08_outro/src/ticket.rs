@@ -1,6 +1,5 @@
 use rocket::http::Status;
 use rocket::response;
-use rocket::response::status::{BadRequest, NotFound};
 use rocket::response::Responder;
 use rocket::serde::json::Json;
 use rocket::Request;
@@ -34,9 +33,11 @@ pub struct TicketState {
 }
 
 #[derive(Debug)]
-enum TicketHandlerError {
+pub enum TicketHandlerError {
     NotFound(i32),
-    BadRequest(String),
+    ValidationFailure(String),
+    DatabaseError(String),
+    InvalidData(String),
 }
 
 impl<'r> Responder<'r, 'static> for TicketHandlerError {
@@ -47,8 +48,11 @@ impl<'r> Responder<'r, 'static> for TicketHandlerError {
                 format!("Ticket with ID {} not found", id),
             )
             .respond_to(r),
-            TicketHandlerError::BadRequest(e) => {
+            TicketHandlerError::ValidationFailure(e) => {
                 response::status::Custom(Status::BadRequest, e).respond_to(r)
+            },
+            TicketHandlerError::DatabaseError(e) | TicketHandlerError::InvalidData(e) => {
+                response::status::Custom(Status::InternalServerError, e).respond_to(r)
             }
         }
     }
@@ -58,10 +62,10 @@ impl<'r> Responder<'r, 'static> for TicketHandlerError {
 pub async fn create(
     data: Json<TicketDraft>,
     state: &State<TicketState>,
-) -> Result<Json<Ticket>, BadRequest<String>> {
+) -> Result<Json<Ticket>, TicketHandlerError> {
     let status = TicketStatus::ToDo;
-    let description= TicketDescription::try_from(data.description.clone()).map_err(|e| BadRequest(e.to_string()))?;
-    let title = TicketTitle::try_from(data.title.clone()).map_err(|e| BadRequest(e.to_string()))?;
+    let description= TicketDescription::try_from(data.description.clone()).map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
+    let title = TicketTitle::try_from(data.title.clone()).map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
     let ticket_row = sqlx::query!(
             "INSERT INTO tickets(description,title,status) VALUES ($1,$2,$3) RETURNING description, title, status",
             String::from(description),
@@ -70,11 +74,11 @@ pub async fn create(
         )
         .fetch_one(&state.pool)
         .await
-        .map_err(|e| BadRequest(e.to_string()))?;
+        .map_err(|e| TicketHandlerError::DatabaseError(e.to_string()))?;
     let ticket = Ticket {
-        title: TicketTitle::try_from(ticket_row.title).map_err(|e| BadRequest(e.to_string()))?,
-        description: TicketDescription::try_from(ticket_row.description).map_err(|e| BadRequest(e.to_string()))?,
-        status: TicketStatus::try_from(ticket_row.status).map_err(|e| BadRequest(e.to_string()))?,
+        title: TicketTitle::try_from(ticket_row.title).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        description: TicketDescription::try_from(ticket_row.description).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        status: TicketStatus::try_from(ticket_row.status).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
     };
     Ok(Json(ticket))
 }
@@ -91,13 +95,13 @@ pub async fn read(id: i32, state: &State<TicketState>) -> Result<Json<Ticket>, T
     let ticket_row = match get_ticket_query_result {
         Ok(ticket_row) => ticket_row,
         Err(sqlx::Error::RowNotFound) => return Err(TicketHandlerError::NotFound(id)),
-        Err(e) => return Err(TicketHandlerError::BadRequest(e.to_string())),
+        Err(e) => return Err(TicketHandlerError::InvalidData(e.to_string())),
     };
 
     let ticket = Ticket {
-        title: TicketTitle::try_from(ticket_row.title).unwrap(),
-        description: TicketDescription::try_from(ticket_row.description).unwrap(),
-        status: TicketStatus::try_from(ticket_row.status).unwrap(),
+        title: TicketTitle::try_from(ticket_row.title).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        description: TicketDescription::try_from(ticket_row.description).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        status: TicketStatus::try_from(ticket_row.status).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
     };
 
     Ok(Json(ticket))
