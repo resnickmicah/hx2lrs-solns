@@ -1,5 +1,4 @@
-DROP TABLE IF EXISTS tickets;
-
+-- Add migration script here
 CREATE TABLE tickets (
   id serial PRIMARY KEY,
   description TEXT NOT NULL,
