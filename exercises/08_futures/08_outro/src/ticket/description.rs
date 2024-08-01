@@ -20,7 +20,7 @@ impl TryFrom<String> for TicketDescription {
         if value.len() == 0 {
             return Err(TicketDescriptionError::DescriptionCannotBeEmpty);
         }
-        if value.len() > 50 {
+        if value.len() > 500 {
             return Err(TicketDescriptionError::DescriptionTooLong);
         }
         Ok(TicketDescription(value))

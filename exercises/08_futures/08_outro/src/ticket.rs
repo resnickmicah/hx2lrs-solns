@@ -50,7 +50,7 @@ impl<'r> Responder<'r, 'static> for TicketHandlerError {
             .respond_to(r),
             TicketHandlerError::ValidationFailure(e) => {
                 response::status::Custom(Status::BadRequest, e).respond_to(r)
-            },
+            }
             TicketHandlerError::DatabaseError(e) | TicketHandlerError::InvalidData(e) => {
                 response::status::Custom(Status::InternalServerError, e).respond_to(r)
             }
@@ -64,8 +64,10 @@ pub async fn create(
     state: &State<TicketState>,
 ) -> Result<Json<Ticket>, TicketHandlerError> {
     let status = TicketStatus::ToDo;
-    let description= TicketDescription::try_from(data.description.clone()).map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
-    let title = TicketTitle::try_from(data.title.clone()).map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
+    let description = TicketDescription::try_from(data.description.clone())
+        .map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
+    let title = TicketTitle::try_from(data.title.clone())
+        .map_err(|e| TicketHandlerError::ValidationFailure(e.to_string()))?;
     let ticket_row = sqlx::query!(
             "INSERT INTO tickets(description,title,status) VALUES ($1,$2,$3) RETURNING description, title, status",
             String::from(description),
@@ -76,9 +78,12 @@ pub async fn create(
         .await
         .map_err(|e| TicketHandlerError::DatabaseError(e.to_string()))?;
     let ticket = Ticket {
-        title: TicketTitle::try_from(ticket_row.title).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
-        description: TicketDescription::try_from(ticket_row.description).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
-        status: TicketStatus::try_from(ticket_row.status).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        title: TicketTitle::try_from(ticket_row.title)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        description: TicketDescription::try_from(ticket_row.description)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        status: TicketStatus::try_from(ticket_row.status)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
     };
     Ok(Json(ticket))
 }
@@ -99,9 +104,12 @@ pub async fn read(id: i32, state: &State<TicketState>) -> Result<Json<Ticket>, T
     };
 
     let ticket = Ticket {
-        title: TicketTitle::try_from(ticket_row.title).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
-        description: TicketDescription::try_from(ticket_row.description).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
-        status: TicketStatus::try_from(ticket_row.status).map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        title: TicketTitle::try_from(ticket_row.title)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        description: TicketDescription::try_from(ticket_row.description)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
+        status: TicketStatus::try_from(ticket_row.status)
+            .map_err(|e| TicketHandlerError::InvalidData(e.to_string()))?,
     };
 
     Ok(Json(ticket))
