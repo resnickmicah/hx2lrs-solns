@@ -27,7 +27,9 @@ async fn main(
         .map_err(CustomError::new)?;
 
     let state = MyState { pool };
-    let rocket = rocket::build().mount("/ticket", routes![create, read]).manage(state);
+    let rocket = rocket::build()
+        .mount("/ticket", routes![create, read])
+        .manage(state);
 
     Ok(rocket.into())
 }

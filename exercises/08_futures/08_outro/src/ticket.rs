@@ -35,15 +35,24 @@ pub async fn create(
     state: &State<TicketState>,
 ) -> Result<Json<Ticket>, BadRequest<String>> {
     let status = Status::ToDo;
+    let description = TicketDescription::try_from(data.description.clone())
+        .map_err(|e| BadRequest(e.to_string()))?;
+    let title = TicketTitle::try_from(data.title.clone()).map_err(|e| BadRequest(e.to_string()))?;
+    let ticket = Ticket {
+        title,
+        description,
+        status,
+    };
     let ticket_row = sqlx::query!(
             "INSERT INTO tickets(description,title,status) VALUES ($1,$2,$3) RETURNING description, title, status",
-            String::from(data.description.clone()),
-            String::from(data.title.clone()),
-            String::from(status)
+            String::from(ticket.description),
+            String::from(ticket.title),
+            String::from(ticket.status)
         )
         .fetch_one(&state.pool)
         .await
         .map_err(|e| BadRequest(e.to_string()))?;
+    // Can trust that these are valid values because we just inserted them after validation above
     let ticket = Ticket {
         title: TicketTitle::try_from(ticket_row.title).unwrap(),
         description: TicketDescription::try_from(ticket_row.description).unwrap(),
@@ -54,10 +63,13 @@ pub async fn create(
 
 #[get("/<id>")]
 pub async fn read(id: i32, state: &State<TicketState>) -> Result<Json<Ticket>, BadRequest<String>> {
-    let ticket_row = sqlx::query!("SELECT description, title, status FROM tickets WHERE id = $1", id)
-        .fetch_one(&state.pool)
-        .await
-        .map_err(|e| BadRequest(e.to_string()))?;
+    let ticket_row = sqlx::query!(
+        "SELECT description, title, status FROM tickets WHERE id = $1",
+        id
+    )
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| BadRequest(e.to_string()))?;
     let ticket = Ticket {
         title: TicketTitle::try_from(ticket_row.title).unwrap(),
         description: TicketDescription::try_from(ticket_row.description).unwrap(),
