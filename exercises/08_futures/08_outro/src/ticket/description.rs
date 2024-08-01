@@ -40,6 +40,12 @@ impl TryFrom<&str> for TicketDescription {
     }
 }
 
+impl From<TicketDescription> for String {
+    fn from(description: TicketDescription) -> Self {
+        description.0
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
