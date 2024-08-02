@@ -23,9 +23,9 @@ pub struct TicketDraft {
 
 #[derive(Debug, PartialEq, Clone, Serialize, FromRow)]
 pub struct Ticket {
-    pub title: TicketTitle,
-    pub description: TicketDescription,
-    pub status: TicketStatus,
+    title: TicketTitle,
+    description: TicketDescription,
+    status: TicketStatus,
 }
 
 pub struct TicketState {
