@@ -13,3 +13,8 @@
   * if --check doesn't throw any errors: `cargo sqlx prepare`
 4. `cp Secrets.toml.example Secrets.toml` (and make sure your DATABASE_URL matches the one from your .env)
 5. `cargo shuttle run`
+
+Todo:
+1. Remove .env or Secrets.toml
+2. Return ticket ID in POST response
+3. Add PATCH and DELETE methods
